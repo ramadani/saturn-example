@@ -10,20 +10,20 @@ import (
 
 func main() {
 	event := saturn.NewLocalEvent(map[string][]saturn.Listener{
-		"user.created": {
-			&sendEmailListener{},
-			&checkRewardsListener{},
+		"userRegistered": {
+			&sendEmailVerificationListener{},
 		},
 	})
 	emitter := saturn.NewLocalEmitter(event)
 	ctx := context.Background()
-	_ = event.On(ctx, "user.created", []saturn.Listener{
+
+	_ = event.On(ctx, "userRegistered", []saturn.Listener{
 		&logNewUserListener{},
 	})
 
 	start := time.Now()
 
-	err := emitter.Emit(ctx, NewUserCreated(user{Name: "Ramadani", Email: "dani@gmail.id"}))
+	err := emitter.Emit(ctx, &userRegistered{data: user{Name: "Ramadani", Email: "dani@gmail.id"}})
 	log.Println("emit err", err)
 
 	end := time.Now()
@@ -35,15 +35,15 @@ type user struct {
 	Name, Email string
 }
 
-type userCreated struct {
+type userRegistered struct {
 	data user
 }
 
-func (e *userCreated) Header() string {
-	return "user.created"
+func (e *userRegistered) Header() string {
+	return "userRegistered"
 }
 
-func (e *userCreated) Body() ([]byte, error) {
+func (e *userRegistered) Body() ([]byte, error) {
 	b, err := json.Marshal(&e.data)
 	if err != nil {
 		return nil, err
@@ -51,31 +51,15 @@ func (e *userCreated) Body() ([]byte, error) {
 	return b, nil
 }
 
-func NewUserCreated(data user) saturn.Dispatchable {
-	return &userCreated{data: data}
-}
+type sendEmailVerificationListener struct{}
 
-type sendEmailListener struct{}
-
-func (l *sendEmailListener) Handle(_ context.Context, value []byte) (err error) {
+func (l *sendEmailVerificationListener) Handle(_ context.Context, value []byte) (err error) {
 	data := &user{}
 	_ = json.Unmarshal(value, data)
 
 	time.Sleep(time.Second * 3)
 
 	log.Println("send email to", data.Email)
-	return
-}
-
-type checkRewardsListener struct{}
-
-func (l *checkRewardsListener) Handle(_ context.Context, value []byte) (err error) {
-	data := &user{}
-	_ = json.Unmarshal(value, data)
-
-	time.Sleep(time.Second * 5)
-
-	log.Println("check rewards for", data.Name)
 	return
 }
 
