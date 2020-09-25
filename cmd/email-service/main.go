@@ -19,7 +19,7 @@ func main() {
 	saramaCog.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRoundRobin
 
 	addresses := []string{"localhost:9092"}
-	consumerGroup, err := sarama.NewConsumerGroup(addresses, "titan-1", saramaCog)
+	consumerGroup, err := sarama.NewConsumerGroup(addresses, "email-service", saramaCog)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -33,8 +33,6 @@ func main() {
 
 	_ = event.On(ctx, "userActivated", []saturn.Listener{
 		&sendWelcomeEmailListener{},
-		&sendWelcomeNotificationListener{},
-		&checkInvitationLinkListener{},
 	})
 
 	go func() {
@@ -43,9 +41,9 @@ func main() {
 		}
 	}()
 
-	<-event.Ready()
+	//<-event.Ready()
 
-	log.Println("Titan up and running!...")
+	log.Println("Email Service up and running!...")
 
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
@@ -90,25 +88,5 @@ func (l *sendWelcomeEmailListener) Handle(ctx context.Context, value []byte) (er
 	_ = json.Unmarshal(value, data)
 
 	log.Println("send welcome email to", data.Email)
-	return
-}
-
-type sendWelcomeNotificationListener struct{}
-
-func (l *sendWelcomeNotificationListener) Handle(ctx context.Context, value []byte) (err error) {
-	data := &userActivation{}
-	_ = json.Unmarshal(value, data)
-
-	log.Println("send welcome notification to", data.Name)
-	return
-}
-
-type checkInvitationLinkListener struct{}
-
-func (l *checkInvitationLinkListener) Handle(ctx context.Context, value []byte) (err error) {
-	data := &userActivation{}
-	_ = json.Unmarshal(value, data)
-
-	log.Println("check invitation link from", data.ReferralCode)
 	return
 }

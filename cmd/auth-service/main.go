@@ -29,17 +29,19 @@ func main() {
 		Name:  "Ramadani",
 		Email: "dani@gmail.com",
 	}
+
+	log.Println("user registered")
+	if err = event.Emit(ctx, &userRegisteredEvent{data: userRegistered}); err != nil {
+		log.Fatal(err)
+	}
+
 	userActivated := &userActivation{
 		Name:         "Ramadani",
 		Email:        "dani@gmail.com",
 		ReferralCode: "qwerty",
 	}
 
-	log.Println("emit user registered event")
-	if err = event.Emit(ctx, &userRegisteredEvent{data: userRegistered}); err != nil {
-		log.Fatal(err)
-	}
-
+	log.Println("user activated")
 	if err = event.Emit(ctx, &userActivatedEvent{data: userActivated}); err != nil {
 		log.Fatal(err)
 	}
